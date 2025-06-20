@@ -5,8 +5,7 @@
     All the FEM calculations are done in C++
 =#
 
-include("../../src/gmsh_wrapper.jl")
-include("../../src/FEM.jl")
+include("../src/gmsh_wrapper.jl")
 
 # For plots | Uncomment the plot section of "main()"
 using GLMakie
@@ -91,55 +90,6 @@ function main(meshSize=0,localSize=0,showGmsh=true,saveMesh=false)
         Hext::Ptr{Float64},
         shell_id::Int32
     )::Cvoid
-
-    # Magnetic field
-    H_vectorField::Matrix{Float64} = zeros(mesh.nt,3)
-    for k in 1:mesh.nt
-        nds = mesh.t[:,k];
-
-        # Sum the contributions
-        for nd in nds
-            # obtain the element parameters
-            _,b,c,d = abcd(mesh.p,nds,nd)
-
-            H_vectorField[k,1] -= u[nd]*b;
-            H_vectorField[k,2] -= u[nd]*c;
-            H_vectorField[k,3] -= u[nd]*d;
-        end
-    end
-
-    # Magnetic field intensity
-    H::Vector{Float64} = zeros(mesh.nt)
-    for k in 1:mesh.nt
-        H[k] = norm(H_vectorField[k,:])
-    end
-
-    # Element centroids
-    centroids::Matrix{Float64} = zeros(3,mesh.nt)
-    for k in 1:mesh.nt
-        nds = mesh.t[:,k]
-        centroids[1,k] = sum(mesh.p[1,nds])/4
-        centroids[2,k] = sum(mesh.p[2,nds])/4
-        centroids[3,k] = sum(mesh.p[3,nds])/4
-    end
-
-    # Plot result | Uncomment "using GLMakie"
-    fig = Figure()
-    ax = Axis3(fig[1, 1], aspect = :data, title="Magnetic field H")
-    scatterPlot = scatter!(ax, 
-        centroids[1,mesh.InsideElements],
-        centroids[2,mesh.InsideElements],
-        centroids[3,mesh.InsideElements], 
-        color = H[mesh.InsideElements], 
-        colormap=:rainbow, 
-        markersize=20 .* mesh.VE[mesh.InsideElements]./maximum(mesh.VE[mesh.InsideElements]))
-
-    Colorbar(fig[1, 2], scatterPlot, label="H field strength") # Add a colorbar
-    
-    # Display the figure (this will open an interactive window)
-    wait(display(fig)) # This is required only if runing outside the repl
-    
-    # # save("H.png",fig)
 
 end # end of main
 
