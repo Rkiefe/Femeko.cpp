@@ -263,9 +263,10 @@ void BEMdmag(
 	double* areaT,
 	double* VE,
 	double* Vn,
-	Eigen::MatrixXd LHS,
+	Eigen::PartialPivLU<Eigen::MatrixXd>& lu,
 	Eigen::Ref<Eigen::MatrixXd> m)
 {
+	// Eigen::MatrixXd LHS
 
 	/*		Inputs
 		Hd 		 -> Input and output  | Magnetostatic field, 3 by nv
@@ -301,13 +302,14 @@ void BEMdmag(
 	} // RHS of FEM-BEM magnetostatic potential linear eq.
 
 	// Magnetostatic scalar potential | Solve LHS * u = RHS
-    Eigen::VectorXd u = LHS.partialPivLu().solve(RHS);
+    // Eigen::VectorXd u = LHS.partialPivLu().solve(RHS);
+	Eigen::VectorXd u = lu.solve(RHS);
 
     // Check solution
-    if (LHS.partialPivLu().info() != Eigen::Success) {
-        // std::cerr << "Solving failed!" << std::endl;
-        throw std::runtime_error("Linear solver failed for FEM-BEM magnetostatic potential");
-    }
+    // if (LHS.partialPivLu().info() != Eigen::Success) {
+    //     // std::cerr << "Solving failed!" << std::endl;
+    //     throw std::runtime_error("Linear solver failed for FEM-BEM magnetostatic potential");
+    // }
 
     // Calculate the Magnetostatic field
     Eigen::MatrixXd Hdk = Eigen::MatrixXd::Zero(3,nt);

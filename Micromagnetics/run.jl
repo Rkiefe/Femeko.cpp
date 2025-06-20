@@ -22,7 +22,7 @@ function main(meshSize=0,showGmsh=true,saveMesh=false)
     gmsh.initialize()
 
     # >> Model
-    L::Vector{Float64} = [1.65, 1.65, 0.04] # Dimensions of the object
+    L::Vector{Float64} = [100, 100, 5] # Dimensions of the object
 
     # Add the body
     addCuboid([0,0,0],L)
@@ -49,6 +49,10 @@ function main(meshSize=0,showGmsh=true,saveMesh=false)
     m::Matrix{Float64} = zeros(3,mesh.nv)
     m[1,:] .= 1
 
+    maxAtt::Int32 = 15000
+    M_avg::Matrix{Float64} = zeros(3,maxAtt)
+
+    @time begin
     # Calculate the magnetostatic field
     @ccall "julia_wrapper.so".LL(
         m::Ptr{Float64},
@@ -60,39 +64,30 @@ function main(meshSize=0,showGmsh=true,saveMesh=false)
         mesh.VE::Ptr{Float64},
         mesh.nv::Int32,
         mesh.nt::Int32,
-        mesh.ne::Int32
+        mesh.ne::Int32,
+        M_avg::Ptr{Float64},
+        maxAtt::Int32
     )::Cvoid
+    end
 
+    time::Vector{Int32} = 1:maxAtt
 
+    fig = Figure()
+    ax = Axis( fig[1,1] )
 
-    # # Magnetic field intensity
-    # H::Vector{Float64} = zeros(mesh.nv)
-    # for i in 1:mesh.nv
-    #     H[i] = norm(Hd[:,i])
-    # end
+    scatter!(ax,time,M_avg[1,:], label = "M_x")
+    scatter!(ax,time,M_avg[2,:], label = "M_y")
+    scatter!(ax,time,M_avg[3,:], label = "M_z")
+    axislegend()
 
-    # # Plot result | Uncomment "using GLMakie"
-    # fig = Figure()
-    # ax = Axis3(fig[1, 1], aspect = :data, title="Magnetic field H")
-    
-    # scatterPlot = scatter!(ax, 
-    #     mesh.p[1,:],
-    #     mesh.p[2,:],
-    #     mesh.p[3,:], 
-    #     color = H, 
-    #     colormap=:rainbow
-    #     ) # markersize=20 .* mesh.VE./maximum(mesh.VE)
+    # save("M_time_Sphere.png",fig)
+    wait(display(fig))
 
-    # Colorbar(fig[1, 2], scatterPlot, label="H field strength") # Add a colorbar
-    
-    # # Display the figure (this will open an interactive window)
-    # wait(display(fig)) # This is required only if runing outside the repl
-    
     # save("H.png",fig)
 
 end # end of main
 
-meshSize = 4
+meshSize = 0
 showGmsh = false
 saveMesh = false
 

@@ -10,11 +10,10 @@ extern "C"{
 		    int* t_in,
 		    int* surfaceT_in,
 		    double* normal_in,
-		    double* AE,
-		    double* VE,
-		    int nv,
-		    int nt,
-		    int ne)
+		    double* AE, double* VE,
+		    int nv, int nt, int ne,
+		    double* M_avg_out,
+		    int maxAtt)
 	{
 
 		// Node coordinates
@@ -33,14 +32,15 @@ extern "C"{
 		Eigen::Map<Eigen::MatrixXd> m(m_in,3,nv);
 
 		// Run
-		LandauLifshitz(
-				  	m,
-				  	p,
-				  	t,
-				  	surfaceT,
-				  	normal,
-				  	AE,
-				  	VE);
+		Eigen::MatrixXd M_avg = LandauLifshitz(
+										  	m, p, t,
+										  	surfaceT,
+										  	normal,
+										  	AE, VE,
+										  	maxAtt);
+
+		// Copy results to Julia output
+        Eigen::Map<Eigen::MatrixXd>(M_avg_out, 3, maxAtt) = M_avg;
 
 	} // Wrapper to C++ demag field
 
