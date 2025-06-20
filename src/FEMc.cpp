@@ -9,8 +9,8 @@
 // #include <algorithm> // For std::find
 
 // Eigen for linear algebra
-#include "../../extern/eigen/Eigen/Dense"
-#include "../../extern/eigen/Eigen/Sparse"
+#include "../extern/eigen/Eigen/Dense"
+#include "../extern/eigen/Eigen/Sparse"
 
 #define pi 3.14159265358979311600
 

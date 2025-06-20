@@ -5,8 +5,7 @@
     All the FEM-BEM calculations are done in C++
 =#
 
-include("../../src/gmsh_wrapper.jl")
-include("../../src/FEM.jl")
+include("../src/gmsh_wrapper.jl")
 
 # For plots | Uncomment the plot section of "main()"
 using GLMakie

@@ -3,8 +3,7 @@
 #include "../src/FEMc.cpp" // Include Femeko C++ FEM functions
 
 // Magnetostatic simulation of a paramagnet
-void magnetostatics(
-	Eigen::Ref<Eigen::MatrixXd> H,
+Eigen::VectorXd magnetostatics(
 	Eigen::Ref<Eigen::MatrixXd> p, 
 	Eigen::Ref<Eigen::MatrixXi> t, 
 	Eigen::Ref<Eigen::MatrixXi> surfaceT, 
@@ -76,20 +75,7 @@ void magnetostatics(
         throw std::runtime_error("Solving failed");
     }
 
-    // Update the Magnetostatic field
-    for (int k = 0; k<nt; k++)
-    {
-    	for(int i = 0; i<4; i++)
-    	{
-	    	Eigen::Vector4d r = abcd(p,t.col(k),t(i,k));
-	    	// phi = a + bx + cy + dz
-    		H(0,k) -= u(t(i,k))*r(1);
-    		H(1,k) -= u(t(i,k))*r(2);
-    		H(2,k) -= u(t(i,k))*r(3);
-    	}
-    } // Magnetostatic field on each element of the mesh
-
-
+    return u;
 }
 
 extern "C"{
@@ -98,7 +84,7 @@ extern "C"{
 		Takes Julia input arrays and converts to eigen vectors
 		and std vectors
 	*/ 
-	void cMagnetoStatics(double* H_in,
+	void cMagnetoStatics(double* u_in,
 						double* p_in,
 						int* t_in,
 						int* surfaceT_in,
@@ -126,14 +112,11 @@ extern "C"{
 
 		// Source field
 		std::vector<double> F(F_in, F_in + 3);  
-		// Example of source field {1.0,0.0,0.0}
+		// Example of source field {1.0,2.0,3.0}
 
-		// Map the input magnetic field
-		Eigen::Map<Eigen::MatrixXd> H(H_in,3,nt);
 
 		// Run
-		magnetostatics(
-			 H,
+		Eigen::VectorXd u = magnetostatics(
 			 p, 
 			 t, 
 			 surfaceT, 
@@ -142,6 +125,13 @@ extern "C"{
 			 mu, 
 			 F,
 			 shell_id);
+
+		// Update the input u
+		for (int i = 0; i < nv; i++)
+		{
+			// std::cout << u(i) << std::endl;
+			u_in[i] = u(i);
+		}
 
 	} // Wrapper to C++ magnetic field simulation
 
