@@ -1,22 +1,20 @@
 // Wrapper to C++ micromagnetics simulation to be called in julia
 
-#include "../src/BEMc.cpp" // Include Femeko C++ FEM functions
+#include "LandauLifshitz.cpp" // Include Femeko C++ FEM functions
 
 extern "C"{
 	
 	// Get the demagnetizing field on the mesh nodes
-	void demag(double* Hd_in,
-			   double* p_in,
-			   int* t_in,
-			   int* surfaceT_in,
-			   double* normal_in,
-			   double* areaT,
-			   int nv,
-			   int nt,
-			   int ne,
-			   double* VE,
-			   double* Vn,
-			   double* m_in)
+	void LL(double* m_in,
+			double* p_in,
+		    int* t_in,
+		    int* surfaceT_in,
+		    double* normal_in,
+		    double* AE,
+		    double* VE,
+		    int nv,
+		    int nt,
+		    int ne)
 	{
 
 		// Node coordinates
@@ -34,20 +32,15 @@ extern "C"{
 		// Magnetization
 		Eigen::Map<Eigen::MatrixXd> m(m_in,3,nv);
 
-		// Map the input magnetostatic field
-		Eigen::Map<Eigen::MatrixXd> Hd_out(Hd_in,3,nv);
-
 		// Run
-		BEMdmag(
-				  Hd_out,
-				  p, 
-				  t, 
-				  surfaceT, 
-				  normal,
-				  areaT,
-				  VE,
-				  Vn,
-				  m);
+		LandauLifshitz(
+				  	m,
+				  	p,
+				  	t,
+				  	surfaceT,
+				  	normal,
+				  	AE,
+				  	VE);
 
 	} // Wrapper to C++ demag field
 

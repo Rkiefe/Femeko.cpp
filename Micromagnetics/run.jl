@@ -41,18 +41,6 @@ function main(meshSize=0,showGmsh=true,saveMesh=false)
     println("Number of elements ",size(mesh.t,2))
     println("Number of Inside elements ",length(mesh.InsideElements))
 
-    # Volume of elements of each mesh node | Needed for the demagnetizing field
-    Vn::Vector{Float64} = zeros(mesh.nv)
-
-    # Integral of basis function over the domain | Needed for the exchange field
-    nodeVolume::Vector{Float64} = zeros(mesh.nv)
-    
-    for k in 1:mesh.nt
-        Vn[mesh.t[:,k]]         .+= mesh.VE[k]
-        nodeVolume[mesh.t[:,k]] .+= mesh.VE[k]/4
-    end
-    
-
     # Adjust to 0 indexing
     t::Matrix{Int32} = mesh.t .- 1
     surfaceT::Matrix{Int32} = mesh.surfaceT .- 1
@@ -61,47 +49,44 @@ function main(meshSize=0,showGmsh=true,saveMesh=false)
     m::Matrix{Float64} = zeros(3,mesh.nv)
     m[1,:] .= 1
 
-    # Prepare the output
-    Hd::Matrix{Float64} = zeros(3,mesh.nv)
-
     # Calculate the magnetostatic field
-    @ccall "julia_wrapper.so".demag(
-        Hd::Ptr{Float64},
+    @ccall "julia_wrapper.so".LL(
+        m::Ptr{Float64},
         mesh.p::Ptr{Float64},
         t::Ptr{Int32},
         surfaceT::Ptr{Int32},
         mesh.normal::Ptr{Float64},
         mesh.AE::Ptr{Float64},
+        mesh.VE::Ptr{Float64},
         mesh.nv::Int32,
         mesh.nt::Int32,
-        mesh.ne::Int32,
-        mesh.VE::Ptr{Float64},
-        Vn::Ptr{Float64},
-        m::Ptr{Float64}
+        mesh.ne::Int32
     )::Cvoid
 
-    # Magnetic field intensity
-    H::Vector{Float64} = zeros(mesh.nv)
-    for i in 1:mesh.nv
-        H[i] = norm(Hd[:,i])
-    end
 
-    # Plot result | Uncomment "using GLMakie"
-    fig = Figure()
-    ax = Axis3(fig[1, 1], aspect = :data, title="Magnetic field H")
-    
-    scatterPlot = scatter!(ax, 
-        mesh.p[1,:],
-        mesh.p[2,:],
-        mesh.p[3,:], 
-        color = H, 
-        colormap=:rainbow
-        ) # markersize=20 .* mesh.VE./maximum(mesh.VE)
 
-    Colorbar(fig[1, 2], scatterPlot, label="H field strength") # Add a colorbar
+    # # Magnetic field intensity
+    # H::Vector{Float64} = zeros(mesh.nv)
+    # for i in 1:mesh.nv
+    #     H[i] = norm(Hd[:,i])
+    # end
+
+    # # Plot result | Uncomment "using GLMakie"
+    # fig = Figure()
+    # ax = Axis3(fig[1, 1], aspect = :data, title="Magnetic field H")
     
-    # Display the figure (this will open an interactive window)
-    wait(display(fig)) # This is required only if runing outside the repl
+    # scatterPlot = scatter!(ax, 
+    #     mesh.p[1,:],
+    #     mesh.p[2,:],
+    #     mesh.p[3,:], 
+    #     color = H, 
+    #     colormap=:rainbow
+    #     ) # markersize=20 .* mesh.VE./maximum(mesh.VE)
+
+    # Colorbar(fig[1, 2], scatterPlot, label="H field strength") # Add a colorbar
+    
+    # # Display the figure (this will open an interactive window)
+    # wait(display(fig)) # This is required only if runing outside the repl
     
     # save("H.png",fig)
 

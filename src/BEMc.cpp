@@ -263,6 +263,7 @@ void BEMdmag(
 	double* areaT,
 	double* VE,
 	double* Vn,
+	Eigen::MatrixXd LHS,
 	Eigen::Ref<Eigen::MatrixXd> m)
 {
 
@@ -280,22 +281,6 @@ void BEMdmag(
 	int nv = p.cols(); 			// Number of mesh nodes
 	int nt = t.cols(); 			// Number of volume elements
 	int ne = surfaceT.cols();   // Number of surface elements
-
-	// Make the FEM-BEM matrices
-
-	// Stiffness matrix
-	Eigen::MatrixXd A = denseStiffnessMatrix(p,t,VE); 		// nv by nv
-	Eigen::MatrixXd B = Bmatrix(p,surfaceT,areaT); 			// nv by ne
-	Eigen::MatrixXd C = Cmatrix(p,surfaceT,normal,areaT); 	// ne by nv
-	Eigen::MatrixXd D = Dmatrix(p,surfaceT,areaT); 			// ne by ne
-
-	// Extend the matrix
-	// LHS = [-A B; C D]
-	Eigen::MatrixXd LHS(nv+ne,nv+ne);
-	LHS.block(0,0,nv,nv) 		= -A;
-	LHS.block(0, nv, nv, ne) 	= B;
-	LHS.block(nv, 0, ne, nv) 	= C;
-	LHS.block(nv, nv, ne, ne) 	= D;
 
 	// Righ hand side of FEM-BEM:
 	Eigen::VectorXd RHS = Eigen::VectorXd::Zero(nv+ne);
