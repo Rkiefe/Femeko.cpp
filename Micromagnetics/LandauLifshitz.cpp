@@ -22,11 +22,12 @@ void timeStep(
 
 	// Find new m(n+1) until it converges
 	Eigen::Vector3d oldGuess = m;
+	Eigen::PartialPivLU<Eigen::Matrix3d> luSolver;
 
 	double err = 1.0;
 	int att = 0;
 	Eigen::Matrix3d mat;
-	while(err > 1e-6 && att < 100)
+	while(err > 1e-6 && att < 1000)
 	{
 		att++;
 
@@ -35,7 +36,11 @@ void timeStep(
 	          	-d*H12(2),  1.0,     d*H12(0),
 	           	d*H12(1), -d*H12(0),  1.0;
 
-	    mNew = mat.lu().solve(m - d * m.cross(H12));  // Best for 3x3 systems
+	    luSolver.compute(mat);
+
+	    mNew = luSolver.solve(m - d * m.cross(H12));
+
+	    // mNew = mat.lu().solve(m - d * m.cross(H12));  // Best for 3x3 systems
 
 	    // 3) m (n+1/2)
 	    m12 = 0.5*(m + mNew);
@@ -178,6 +183,7 @@ Eigen::MatrixXd LandauLifshitz(
 	while (time < totalTime && att < maxAtt)
 	{
 		// New magnetization
+		#pragma omp parallel for
 		for(int i = 0; i<nv; i++)
 		{
 			timeStep(m.col(i).head<3>(),
